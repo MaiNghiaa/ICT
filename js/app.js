@@ -99,7 +99,7 @@
 
   /* ---------------- lưu trữ ---------------- */
   // profiles: hồ sơ học sinh trên máy này · tclasses: lớp thầy tạo · results: kết quả học sinh gửi thầy
-  let DB = { profiles: {}, current: null, theme: null, tclasses: {}, results: {}, tpin: null };
+  let DB = { profiles: {}, current: null, theme: null, tclasses: {}, results: {}, tAuth: null };
   try { DB = Object.assign(DB, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { /* chế độ riêng tư */ }
   DB.tclasses = DB.tclasses || {}; DB.results = DB.results || {};
   let P = DB.current ? DB.profiles[DB.current] : null;
@@ -377,7 +377,7 @@
     DB.theme = dark ? "light" : "dark"; applyTheme(); save();
   };
   $("#whoBtn").onclick = () => welcomeModal();
-  $("#foot").innerHTML = `Ngân hàng ${Object.values(QB.bank).reduce((s, a) => s + a.length, 0)} câu hỏi + ${GENS.length} bộ sinh câu ngẫu nhiên, tổng hợp từ <a href="${esc(QB.source)}" target="_blank" rel="noopener">Computing topics for Grade 8</a> (trích xuất ${esc(QB.extractedAt)}). Dữ liệu làm bài lưu trên trình duyệt này.`;
+  $("#foot").innerHTML = `Ngân hàng ${Object.values(QB.bank).reduce((s, a) => s + a.length, 0)} câu hỏi + ${GENS.length} bộ sinh câu ngẫu nhiên, tổng hợp từ <a href="${esc(QB.source)}" target="_blank" rel="noopener">Computing topics for Grade 8</a> (trích xuất ${esc(QB.extractedAt)}). Dữ liệu làm bài lưu trên trình duyệt này. · <a href="#class">Khu giáo viên</a>`;
 
   /* Đường dẫn dạng #ten hoặc #ten-phu (trang Artifact chỉ giữ #ten đơn giản) */
   function parseHash() { const h = location.hash.slice(1), i = h.indexOf("-"); return i < 0 ? { r: h, a: "" } : { r: h.slice(0, i), a: h.slice(i + 1) }; }
@@ -389,7 +389,7 @@
     $(".brand small").textContent = teacher ? `Khu giáo viên · ${SITE.teacher}` : `Lớp ${SITE.teacher}` + (P ? " · " + (P.className || c.short) : "");
     $$("#nav a").forEach(a => a.classList.toggle("on", a.dataset.r === r));
     const student = P && hasBank(P);
-    $$("#nav a").forEach(a => (a.hidden = a.dataset.r !== "class" && a.dataset.r !== "home" && !student));
+    $$("#nav a").forEach(a => (a.hidden = a.dataset.r === "class" ? (teacherLocked() && !teacher) : a.dataset.r !== "home" && !student));
     $("#foot").hidden = !!(P && !hasBank(P));
   }
   function useProfile(p) {
@@ -416,7 +416,7 @@
         <div class="row between mt"><button class="btn ghost" id="jBack">← Nhập mã khác</button><button class="btn primary" id="jStart">Bắt đầu học →</button></div>
       </div>
       ${local.length ? `<div class="eyebrow mt-l">Hoặc chọn tên đã dùng trên máy này</div><div class="list mt-s">${local.map(p => `<button class="opt" data-id="${esc(p.id)}"><span class="k">${esc((p.name[0] || "?").toUpperCase())}</span><span><b>${esc(p.name)}</b> <span class="muted small">${esc([p.className || courseBy(p.course).short, p.cls].filter(Boolean).join(" · "))}</span></span></button>`).join("")}</div>` : ""}
-      <div class="row between mt-l small">${P ? `<button class="btn ghost sm" data-x>Đóng</button>` : "<span></span>"}<a href="#class" id="toTeacher">Thầy/cô giáo? Vào khu giáo viên →</a></div>`);
+      <div class="row between mt-l small">${P ? `<button class="btn ghost sm" data-x>Đóng</button>` : "<span></span>"}${SITE.teacherHash ? "<span></span>" : `<a href="#class" id="toTeacher">Thầy/cô giáo? Vào khu giáo viên →</a>`}</div>`);
     let found = null;
     const inp = $("#jCode", bg), msg = $("#jMsg", bg);
     inp.oninput = () => { const raw = inp.value.toUpperCase().replace(/[^0-9A-Z]/g, ""); inp.value = raw.length > 5 ? raw.slice(0, 5) + "-" + raw.slice(5, 10) : raw; msg.textContent = ""; };
@@ -434,7 +434,7 @@
     $("#jBack", bg).onclick = () => { $("#stepCode", bg).hidden = false; $("#stepName", bg).hidden = true; inp.focus(); };
     $$("[data-id]", bg).forEach(b => (b.onclick = () => useProfile(DB.profiles[b.dataset.id])));
     const x = $("[data-x]", bg); if (x) x.onclick = () => bg.remove();
-    $("#toTeacher", bg).onclick = () => bg.remove();
+    const tt = $("#toTeacher", bg); if (tt) tt.onclick = () => bg.remove();
     if (opts.code && parseCode(opts.code)) go(); else setTimeout(() => inp.focus(), 30);
   }
   /* Bấm link thầy gửi: #join-<MÃ>[-<tên>[-<lớp>]] */
@@ -934,23 +934,26 @@ function doGet(e) {
     const st = { sid, name, grade, code: makeCode(c.code, grade, cl.id, sid), added: today() };
     cl.students.push(st); return st;
   }
-  function pinModal() {
-    const bg = modal(`<h2>Mã PIN giáo viên</h2><p class="small ink2">Khóa khu giáo viên trên máy này để học sinh dùng chung máy không vào được. (Chỉ là khóa đơn giản trên trình duyệt.)</p>
-      <div class="field mt"><label for="pin1">PIN mới (4–6 số) — để trống để bỏ khóa</label><input id="pin1" inputmode="numeric" maxlength="6" autocomplete="off"></div>
-      <div class="row between mt"><button class="btn ghost" data-x>Hủy</button><button class="btn primary" id="pinSave">Lưu</button></div>`);
-    $("[data-x]", bg).onclick = () => bg.remove();
-    $("#pinSave", bg).onclick = () => { const v = $("#pin1", bg).value.trim(); if (v && !/^\d{4,6}$/.test(v)) return toast("PIN gồm 4–6 chữ số."); DB.tpin = v || null; tUnlocked = true; save(); bg.remove(); toast(v ? "Đã đặt PIN giáo viên." : "Đã bỏ khóa PIN."); route(); };
+  /* Mật khẩu giáo viên: chỉ lưu mã băm SHA-256 (kèm salt) trong js/config.js — đặt bằng: sh capnhat.sh matkhau */
+  async function sha256hex(t) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
+  const teacherLocked = () => !!SITE.teacherHash && DB.tAuth !== SITE.teacherHash && !tUnlocked;
+  function lockScreen() {
+    view.innerHTML = `<div class="card" style="max-width:440px;margin:30px auto;text-align:center"><div class="eyebrow">Khu giáo viên</div><h2 class="mt-s">Nhập mật khẩu giáo viên 🔒</h2>
+      <div class="typed" style="justify-content:center"><input id="tpw" type="password" style="max-width:240px" autocomplete="current-password" placeholder="Mật khẩu"><button class="btn primary" id="tpwGo">Mở</button></div>
+      <label class="small row mt-s" style="justify-content:center;gap:6px"><input type="checkbox" id="tpwKeep" checked> Ghi nhớ trên máy này</label>
+      <p class="small muted mt">Học sinh: <a href="#home">quay lại trang học →</a></p></div>`;
+    const go = async () => {
+      const pw = $("#tpw").value; if (!pw) return $("#tpw").focus();
+      let h = ""; try { h = await sha256hex(SITE.teacherSalt + ":" + pw); } catch (e) { return toast("Trình duyệt này không hỗ trợ — hãy mở web qua https hoặc localhost."); }
+      if (h !== SITE.teacherHash) { toast("Mật khẩu chưa đúng."); $("#tpw").select(); return; }
+      tUnlocked = true; if ($("#tpwKeep").checked) { DB.tAuth = SITE.teacherHash; save(); }
+      route();
+    };
+    $("#tpwGo").onclick = go; $("#tpw").onkeydown = e => { if (e.key === "Enter") go(); }; setTimeout(() => $("#tpw").focus(), 30);
   }
 
   function vTeacher(cid) {
-    if (DB.tpin && !tUnlocked) {
-      view.innerHTML = `<div class="card" style="max-width:420px;margin:30px auto;text-align:center"><div class="eyebrow">Khu giáo viên</div><h2 class="mt-s">Nhập mã PIN 🔒</h2>
-        <div class="typed" style="justify-content:center"><input id="pinIn" inputmode="numeric" maxlength="6" style="max-width:160px;text-align:center;letter-spacing:.3em" autocomplete="off"><button class="btn primary" id="pinGo">Mở</button></div>
-        <p class="small muted mt">Học sinh: <a href="#home">quay lại trang học →</a></p></div>`;
-      const go = () => { if ($("#pinIn").value === DB.tpin) { tUnlocked = true; route(); } else { toast("PIN chưa đúng."); $("#pinIn").select(); } };
-      $("#pinGo").onclick = go; $("#pinIn").onkeydown = e => { if (e.key === "Enter") go(); }; setTimeout(() => $("#pinIn").focus(), 30);
-      return;
-    }
+    if (teacherLocked()) return lockScreen();
     autoPull(true);
     if (cid && DB.tclasses[cid]) return vTClass(DB.tclasses[cid]);
     vTList();
@@ -974,6 +977,7 @@ function doGet(e) {
     const orphan = Object.values(DB.results).filter(r => !known.has(r.id));
     view.innerHTML = `<div class="page-head row between"><div><div class="eyebrow">Khu giáo viên · ${esc(SITE.teacher)}</div><h1>Lớp của tôi 👨‍🏫</h1><div class="sub">Tạo lớp → thêm học sinh → gửi mã → nhận kết quả.</div></div>
         <div class="row"><button class="btn" id="pasteAll">Dán kết quả học sinh</button><button class="btn primary" id="newCls">+ Tạo lớp mới</button></div></div>
+      ${SITE.teacherHash ? "" : `<div class="note" style="margin-bottom:14px">⚠ Khu giáo viên <b>chưa có mật khẩu</b> — học sinh mở được trang này. Đặt mật khẩu: chạy <code>sh capnhat.sh matkhau</code> trên máy thầy.</div>`}
       ${journey()}
       ${cls.length ? `<div class="grid g3 mt">${cls.map(c => { const co = courseBy(c.course); const got = c.students.filter(s => studentData(c, s)).length; return `<a class="card cls-card" href="#class-${esc(c.id)}"><div class="row between"><span class="tag ${co.bank ? "acc" : "warn"}">${esc(co.short)}${co.bank ? "" : " · đang soạn"}</span><span class="small muted">Khối ${c.grade}</span></div><h2 class="mt-s">${esc(c.name)}</h2><div class="small ink2 mt-s">${c.students.length} học sinh · ${got} đã gửi kết quả</div><div class="small mt">Mở lớp →</div></a>`; }).join("")}</div>`
         : `<div class="card empty mt"><p>Chưa có lớp nào.</p><button class="btn primary" id="newCls2">Tạo lớp đầu tiên →</button></div>`}
@@ -982,13 +986,13 @@ function doGet(e) {
         ${sheetReadUrl() && DB.sheetReadKey ? `<p class="small ink2">Kết quả học sinh tự về Google Sheet của thầy. Lần cập nhật cuối: <b>${DB.sheetSync ? new Date(DB.sheetSync).toLocaleString("vi-VN") : "—"}</b>.${SITE.sheetUrl ? "" : ` <span style="color:var(--warn)">Máy học sinh chưa có link — cần đưa link vào <code>js/config.js</code>.</span>`}${embedded ? ` <span style="color:var(--warn)">Bản trong khung claude.ai không kết nối được — dùng bản localhost/GitHub Pages.</span>` : ""}</p>
           <div class="row mt-s"><button class="btn sm primary" id="gsPull">Cập nhật kết quả</button><button class="btn sm" id="gsSetup">Xem lại cách thiết lập</button></div>`
         : `<p class="small ink2">Học sinh làm xong quiz là kết quả <b>tự gửi</b> về Google Sheet của thầy — không cần copy qua Zalo. Thiết lập 1 lần khoảng 5 phút.</p><button class="btn sm primary mt-s" id="gsSetup">Thiết lập ngay</button>`}</div>
-      <div class="card mt"><h2>Công cụ</h2><div class="row mt-s"><button class="btn sm" id="bk">Sao lưu lớp & kết quả</button><button class="btn sm" id="rs">Khôi phục từ bản sao lưu</button><button class="btn sm" id="pin">${DB.tpin ? "Đổi / bỏ PIN" : "Đặt PIN giáo viên"}</button></div>
+      <div class="card mt"><h2>Công cụ</h2><div class="row mt-s"><button class="btn sm" id="bk">Sao lưu lớp & kết quả</button><button class="btn sm" id="rs">Khôi phục từ bản sao lưu</button>${SITE.teacherHash ? `<button class="btn sm" id="tLogout">Khóa lại khu giáo viên trên máy này</button>` : ""}</div>
         <p class="small muted mt-s">Lớp và kết quả lưu trên trình duyệt này. Dùng “Sao lưu” để chuyển sang máy khác hoặc phòng khi xóa dữ liệu trình duyệt.</p></div>`;
     [$("#newCls"), $("#newCls2")].forEach(b => b && (b.onclick = () => classModal()));
     $("#pasteAll").onclick = () => pasteModal("class");
     $("#bk").onclick = () => exportModal("Sao lưu lớp & kết quả", `lop-thay-nghia-${today()}.json`, JSON.stringify({ app: "ict8-teacher", v: 1, at: today(), tclasses: DB.tclasses, results: DB.results }), "application/json", "Giữ đoạn này (hoặc file) cẩn thận — dán vào “Khôi phục” trên máy khác để có lại toàn bộ lớp.");
     $("#rs").onclick = () => pasteModal("class");
-    $("#pin").onclick = pinModal;
+    const lo = $("#tLogout"); if (lo) lo.onclick = () => { DB.tAuth = null; tUnlocked = false; save(); toast("Đã khóa. Lần sau cần nhập mật khẩu."); route(); };
     $("#gsSetup").onclick = sheetWizard;
     const gp = $("#gsPull"); if (gp) gp.onclick = async () => { gp.disabled = true; if (await pullResults()) route(); else gp.disabled = false; };
     $$("[data-rmres]").forEach(b => (b.onclick = async () => { if (await ask("Xóa kết quả này khỏi máy?", "Xóa", true)) { delete DB.results[b.dataset.rmres]; save(); route(); } }));

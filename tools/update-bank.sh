@@ -21,7 +21,9 @@ NEW=$(count "$TMP/data.js")
 OLD=$(count "$(pwd)/js/data.js" 2>/dev/null || echo "chưa có")
 
 CHANGED=0
-if ! diff -q <(sed 1,3d js/data.js 2>/dev/null) <(sed 1,3d "$TMP/data.js") >/dev/null 2>&1; then cp "$TMP/data.js" js/data.js; CHANGED=1; fi
+sed 1,3d js/data.js > "$TMP/old.body" 2>/dev/null || : > "$TMP/old.body"
+sed 1,3d "$TMP/data.js" > "$TMP/new.body"
+if ! cmp -s "$TMP/old.body" "$TMP/new.body"; then cp "$TMP/data.js" js/data.js; CHANGED=1; fi
 if ! diff -q js/generators.js "$TMP/generators.js" >/dev/null 2>&1; then cp "$TMP/generators.js" js/generators.js; CHANGED=1; fi
 
 if [ "$CHANGED" = 1 ]; then echo "   ✓ Có câu hỏi mới: $OLD → $NEW"; else echo "   = Câu hỏi không đổi ($NEW)"; fi

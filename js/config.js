@@ -16,7 +16,10 @@ window.SITE = {
   // sheetUrl: dán "URL ứng dụng web" của Apps Script vào đây. Để trống = tắt tự gửi.
   sheetUrl: "",
   // Mã ghi (không bí mật, chỉ để lọc dữ liệu rác). Phải trùng WRITE_KEY trong Apps Script.
-  sheetKey: "w-dn41pakri1q075"
+  sheetKey: "w-dn41pakri1q075",
+  // Mật khẩu khu giáo viên (chỉ lưu mã băm, không lưu mật khẩu). Đặt/đổi bằng lệnh:  sh capnhat.sh matkhau
+  teacherSalt: "808d3ec153333ea3",
+  teacherHash: "457aea53f4d698030b640771f4000089102ee960b22527bcf1ac0884f79b8623"
 };
 
 window.COURSES = [

@@ -44,6 +44,6 @@ Ghi chú:
 ## Dữ liệu
 - Câu hỏi: `js/data.js` (605 câu, 44 chủ điểm, 48 bài) + `js/generators.js` (16 bộ sinh câu ngẫu nhiên),
   trích xuất từ https://gilbertmtanofficial-gif.github.io/Computing_topics_for_Grade8/
-- Cập nhật khi trang nguồn thay đổi: `sh tools/update-bank.sh`
+- Cập nhật khi trang nguồn thay đổi: `sh capnhat.sh`
 - Kết quả làm bài lưu trong `localStorage` của trình duyệt (mỗi máy/trình duyệt riêng). Học sinh bấm
   **“Xuất dữ liệu (gửi thầy)”** để gửi file JSON; thầy nhập ở trang **Giáo viên**.
