@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiz Lớp Thầy Nghĩa</title>
+  <meta name="description" content="Quiz ICT mỗi ngày — lớp Thầy Nghĩa. Tự tạo đề theo tiến độ học và thống kê lỗi sai theo chủ điểm.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <a class="brand" href="#home">
+        <span class="brand-mark">QUIZ</span>
+        <span><b>Quiz mỗi ngày</b><small>Lớp Thầy Nghĩa</small></span>
+      </a>
+      <nav class="nav" id="nav">
+        <a href="#home" data-r="home">Hôm nay</a>
+        <a href="#practice" data-r="practice">Luyện tập</a>
+        <a href="#stats" data-r="stats">Thống kê</a>
+        <a href="#wrongs" data-r="wrongs">Câu sai</a>
+        <a href="#progress" data-r="progress">Tiến độ</a>
+        <a href="#class" data-r="class">Giáo viên</a>
+      </nav>
+      <div class="who">
+        <button class="chip-btn" id="whoBtn" type="button">Chọn học sinh</button>
+        <button class="icon-btn" id="themeBtn" type="button" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối">◐</button>
+      </div>
+    </div>
+  </header>
+  <main id="view"></main>
+  <footer class="foot" id="foot"></footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/generators.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
